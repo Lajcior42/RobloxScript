@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LuaShield — Get Your Key</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080a0f;
+  --bg2:#0d1018;
+  --bg3:#111522;
+  --card:#0f1320;
+  --border:#1a2035;
+  --border2:#232e4a;
+  --accent:#4f6ef7;
+  --accent2:#7c4dff;
+  --green:#00e5a0;
+  --red:#ff4d6a;
+  --text:#dde2f5;
+  --muted:#5a6690;
+  --muted2:#8892b8;
+}
+html,body{height:100%;overflow-x:hidden}
+body{
+  font-family:'Syne',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:2rem 1rem;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:50px 50px;opacity:.22;
+  pointer-events:none;z-index:0;
+}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(100px);opacity:.11}
+.orb1{width:500px;height:500px;background:var(--accent);top:-150px;left:-150px}
+.orb2{width:400px;height:400px;background:var(--accent2);bottom:-100px;right:-100px}
+
+.wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:500px;
+  display:flex;flex-direction:column;
+  align-items:center;gap:1.75rem;
+}
+
+/* LOGO */
+.logo{display:flex;align-items:center;gap:.6rem;font-size:1.1rem;font-weight:800;letter-spacing:-.02em;color:var(--text);text-decoration:none}
+.logo-box{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#fff}
+
+/* PROGRESS */
+.prog-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;width:100%}
+.prog-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2)}
+.prog-frac{font-family:'Space Mono',monospace;font-size:.8rem;color:var(--accent);font-weight:700}
+.bar-bg{width:100%;height:4px;background:var(--border2);border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* DOTS */
+.dots-row{display:flex;align-items:center}
+.dot-item{display:flex;flex-direction:column;align-items:center;gap:.35rem}
+.dot-circle{
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid var(--border2);background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;color:var(--muted);
+  transition:all .35s;
+}
+.dot-circle.active{border-color:var(--accent);background:rgba(79,110,247,.15);color:var(--accent);box-shadow:0 0 0 4px rgba(79,110,247,.12)}
+.dot-circle.done{border-color:var(--green);background:rgba(0,229,160,.12);color:var(--green)}
+.dot-label{font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);transition:color .35s;white-space:nowrap}
+.dot-item.active .dot-label{color:var(--accent)}
+.dot-item.done .dot-label{color:var(--green)}
+.dot-line{width:44px;height:1.5px;background:var(--border2);margin-top:16px;border-radius:100px;transition:background .35s}
+.dot-line.done{background:var(--green)}
+
+/* CARD */
+.card{
+  width:100%;background:var(--card);
+  border:1px solid var(--border);border-radius:16px;overflow:hidden;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.card.show{animation:fadeUp .38s ease both}
+
+.card-head{
+  padding:1rem 1.5rem;border-bottom:1px solid var(--border);
+  background:var(--bg3);display:flex;align-items:center;gap:.75rem;
+}
+.head-badge{
+  font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:.28rem .65rem;border-radius:100px;white-space:nowrap;
+}
+.badge-blue{background:rgba(79,110,247,.12);border:1px solid rgba(79,110,247,.22);color:var(--accent)}
+.badge-green{background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.22);color:var(--green)}
+.head-title{font-size:.92rem;font-weight:700;color:var(--text)}
+
+.card-body{padding:1.75rem 1.5rem;display:flex;flex-direction:column;gap:1.1rem}
+
+.step-icon{width:60px;height:60px;border-radius:14px;background:linear-gradient(135deg,rgba(79,110,247,.12),rgba(124,77,255,.12));border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:1.7rem;margin:0 auto}
+.step-title{text-align:center;font-size:1.2rem;font-weight:800;letter-spacing:-.01em}
+.step-desc{text-align:center;color:var(--muted2);font-family:'Space Mono',monospace;font-size:.8rem;line-height:1.7}
+
+/* info/warn */
+.info{background:rgba(79,110,247,.07);border:1px solid rgba(79,110,247,.18);border-radius:8px;padding:.8rem 1rem;font-family:'Space Mono',monospace;font-size:.74rem;line-height:1.6;color:#8eaaff;display:flex;gap:.5rem}
+.warn{background:rgba(255,77,106,.06);border:1px solid rgba(255,77,106,.18);border-radius:8px;padding:.8rem 1rem;font-family:'Space Mono',monospace;font-size:.74rem;line-height:1.6;color:#ff8fa0;display:flex;gap:.5rem}
+
+/* timer */
+.timer{display:flex;align-items:center;justify-content:center;gap:.4rem;color:var(--muted2);font-family:'Space Mono',monospace;font-size:.78rem}
+.timer b{color:var(--text);min-width:1.4rem;text-align:center}
+
+/* buttons */
+.btn{width:100%;padding:.88rem;border-radius:10px;font-family:'Syne',sans-serif;font-size:.93rem;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:.5rem;transition:all .2s;text-decoration:none}
+.btn-main{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 0 22px rgba(79,110,247,.28)}
+.btn-main:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 0 34px rgba(79,110,247,.45)}
+.btn-main:disabled{opacity:.4;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-check{background:rgba(0,229,160,.08);color:var(--green);border:1px solid rgba(0,229,160,.22)}
+.btn-check:hover:not(:disabled){background:rgba(0,229,160,.16)}
+.btn-check:disabled{opacity:.35;cursor:not-allowed}
+.btn-final{background:linear-gradient(135deg,var(--green),#00b87a);color:#061a12;box-shadow:0 0 22px rgba(0,229,160,.28)}
+.btn-final:hover{transform:translateY(-2px);box-shadow:0 0 34px rgba(0,229,160,.45)}
+
+/* success */
+.success-box{background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.18);border-radius:12px;padding:1.4rem;text-align:center}
+.success-em{font-size:2.2rem;margin-bottom:.6rem}
+.success-t{font-size:1.05rem;font-weight:800;color:var(--green);margin-bottom:.4rem}
+.success-s{font-family:'Space Mono',monospace;font-size:.77rem;color:var(--muted2);line-height:1.6}
+
+.key-row{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:.8rem 1rem;display:flex;align-items:center;gap:.6rem}
+.key-val{font-family:'Space Mono',monospace;font-size:.78rem;color:var(--accent);letter-spacing:.04em;flex:1;word-break:break-all}
+.copy-btn{background:none;border:1px solid var(--border2);color:var(--muted2);border-radius:6px;padding:.32rem .65rem;cursor:pointer;font-size:.72rem;font-family:'Space Mono',monospace;transition:all .2s;white-space:nowrap}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.step-panel{display:none}
+.step-panel.active{display:block}
+
+.foot{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);text-align:center;line-height:1.6}
+.foot a{color:var(--muted2);text-decoration:none}
+.foot a:hover{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrap">
+
+  <a class="logo" href="#">
+    <div class="logo-box">LS</div>
+    LuaShield
+  </a>
+
+  <!-- PROGRESS BAR -->
+  <div style="width:100%">
+    <div class="prog-top">
+      <span class="prog-label">Progress</span>
+      <span class="prog-frac" id="frac">Step 1 of 3</span>
+    </div>
+    <div class="bar-bg"><div class="bar-fill" id="bar" style="width:33%"></div></div>
+  </div>
+
+  <!-- STEP DOTS -->
+  <div class="dots-row">
+    <div class="dot-item active" id="di1"><div class="dot-circle active" id="dc1">1</div><div class="dot-label">Step 1</div></div>
+    <div class="dot-line" id="dl1"></div>
+    <div class="dot-item" id="di2"><div class="dot-circle" id="dc2">2</div><div class="dot-label">Step 2</div></div>
+    <div class="dot-line" id="dl2"></div>
+    <div class="dot-item" id="di3"><div class="dot-circle" id="dc3">3</div><div class="dot-label">Step 3</div></div>
+  </div>
+
+  <!-- ===== STEP 1 ===== -->
+  <div class="card show step-panel active" id="step1">
+    <div class="card-head">
+      <span class="head-badge badge-blue">Step 1 / 3</span>
+      <span class="head-title">Complete the first ad</span>
+    </div>
+    <div class="card-body">
+      <div class="step-icon">🔗</div>
+      <div class="step-title">Open Linkvertise</div>
+      <p class="step-desc">Click the button below to open the ad link.<br>Wait for it to fully load, then come back here<br>and click <strong style="color:var(--text)">Verify & Continue</strong>.</p>
+      <div class="warn">
+        <span>⚠</span>
+        <span>Do not close this tab. Open the link in a new tab, complete it, then return here.</span>
+      </div>
+      <div class="timer" id="tw1"><span>Button unlocks in</span><b id="t1">5</b><span>s</span></div>
+      <a href="https://linkvertise.com/3057487/lHVx5LQwPmiB?o=sharing" target="_blank"
+         id="lb1" class="btn btn-main" style="pointer-events:none;opacity:.4"
+         onclick="onOpen(1)">🔗 Open Linkvertise — Step 1</a>
+      <button class="btn btn-check" id="vb1" disabled onclick="advance(1)">✓ Verify &amp; Continue</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 2 ===== -->
+  <div class="card step-panel" id="step2">
+    <div class="card-head">
+      <span class="head-badge badge-blue">Step 2 / 3</span>
+      <span class="head-title">Complete the second ad</span>
+    </div>
+    <div class="card-body">
+      <div class="step-icon">🔑</div>
+      <div class="step-title">Almost there!</div>
+      <p class="step-desc">Open the same link one more time.<br>Return here after completing it.</p>
+      <div class="info">
+        <span>ℹ</span>
+        <span>Each completed step helps support the script creator. Thank you!</span>
+      </div>
+      <div class="timer" id="tw2"><span>Button unlocks in</span><b id="t2">5</b><span>s</span></div>
+      <a href="https://linkvertise.com/3057487/lHVx5LQwPmiB?o=sharing" target="_blank"
+         id="lb2" class="btn btn-main" style="pointer-events:none;opacity:.4"
+         onclick="onOpen(2)">🔗 Open Linkvertise — Step 2</a>
+      <button class="btn btn-check" id="vb2" disabled onclick="advance(2)">✓ Verify &amp; Continue</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP 3 ===== -->
+  <div class="card step-panel" id="step3">
+    <div class="card-head">
+      <span class="head-badge badge-blue">Step 3 / 3</span>
+      <span class="head-title">Last step!</span>
+    </div>
+    <div class="card-body">
+      <div class="step-icon">🏁</div>
+      <div class="step-title">One final time</div>
+      <p class="step-desc">You're on the last step.<br>Complete the link one more time to unlock your key.</p>
+      <div class="info">
+        <span>ℹ</span>
+        <span>Your key will be generated instantly after this step.</span>
+      </div>
+      <div class="timer" id="tw3"><span>Button unlocks in</span><b id="t3">5</b><span>s</span></div>
+      <a href="https://linkvertise.com/3057487/lHVx5LQwPmiB?o=sharing" target="_blank"
+         id="lb3" class="btn btn-main" style="pointer-events:none;opacity:.4"
+         onclick="onOpen(3)">🔗 Open Linkvertise — Step 3</a>
+      <button class="btn btn-check" id="vb3" disabled onclick="advance(3)">✓ Claim My Key</button>
+    </div>
+  </div>
+
+  <!-- ===== DONE ===== -->
+  <div class="card step-panel" id="step4">
+    <div class="card-head">
+      <span class="head-badge badge-green">✓ Complete</span>
+      <span class="head-title">Key ready!</span>
+    </div>
+    <div class="card-body">
+      <div class="success-box">
+        <div class="success-em">🎉</div>
+        <div class="success-t">All steps completed!</div>
+        <p class="success-s">Your key has been generated.<br>Copy it and use it in-game.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <div style="font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Your Key</div>
+        <div class="key-row">
+          <span class="key-val" id="keyOut">generating...</span>
+          <button class="copy-btn" onclick="copyKey()">Copy</button>
+        </div>
+      </div>
+      <p style="text-align:center;font-family:'Space Mono',monospace;font-size:.7rem;color:var(--muted)">Key expires in 24 hours. Save it now.</p>
+    </div>
+  </div>
+
+  <p class="foot">LuaShield Gateway &nbsp;·&nbsp; <a href="#">Terms</a> &nbsp;·&nbsp; <a href="#">Discord</a></p>
+
+</div>
+
+<script>
+// ── countdown for each step, auto-starts when step is shown
+const timers = {};
+
+function startCountdown(step) {
+  if (timers[step]) return;
+  let n = 5;
+  const tEl = document.getElementById('t' + step);
+  const twEl = document.getElementById('tw' + step);
+  const lbEl = document.getElementById('lb' + step);
+  timers[step] = setInterval(() => {
+    n--;
+    tEl.textContent = n;
+    if (n <= 0) {
+      clearInterval(timers[step]);
+      twEl.style.display = 'none';
+      lbEl.style.pointerEvents = '';
+      lbEl.style.opacity = '';
+    }
+  }, 1000);
+}
+
+// ── when user clicks the Linkvertise link, unlock verify button after 4s
+function onOpen(step) {
+  const vb = document.getElementById('vb' + step);
+  setTimeout(() => {
+    vb.disabled = false;
+  }, 4000);
+}
+
+// ── advance to next step
+function advance(step) {
+  const next = step + 1;
+  // update progress
+  const pcts = {1:33, 2:66, 3:100};
+  document.getElementById('bar').style.width = pcts[step] + '%';
+
+  if (next <= 3) {
+    document.getElementById('frac').textContent = 'Step ' + next + ' of 3';
+  } else {
+    document.getElementById('frac').textContent = 'Complete ✓';
+  }
+
+  // dots
+  for (let i = 1; i <= 3; i++) {
+    const di = document.getElementById('di' + i);
+    const dc = document.getElementById('dc' + i);
+    di.className = 'dot-item';
+    dc.className = 'dot-circle';
+    if (i < next) {
+      di.classList.add('done');
+      dc.classList.add('done');
+      dc.textContent = '✓';
+    } else if (i === next) {
+      di.classList.add('active');
+      dc.classList.add('active');
+      dc.textContent = i;
+    } else {
+      dc.textContent = i;
+    }
+    if (i < 3) {
+      const dl = document.getElementById('dl' + i);
+      dl.className = 'dot-line' + (i < next ? ' done' : '');
+    }
+  }
+
+  // panels
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  const nextPanel = document.getElementById('step' + next);
+  nextPanel.classList.add('active');
+  nextPanel.classList.remove('show');
+  void nextPanel.offsetWidth;
+  nextPanel.classList.add('show');
+
+  if (next <= 3) startCountdown(next);
+  else generateKey();
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── generate a random key
+function generateKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const seg = (n) => Array.from({length: n}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  const key = seg(4) + '-' + seg(4) + '-' + seg(4) + '-' + seg(4);
+  document.getElementById('keyOut').textContent = key;
+}
+
+// ── copy key
+function copyKey() {
+  const val = document.getElementById('keyOut').textContent;
+  navigator.clipboard.writeText(val).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+}
+
+// init first step countdown
+startCountdown(1);
+</script>
+</body>
+</html>
