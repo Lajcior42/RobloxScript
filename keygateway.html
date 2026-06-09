@@ -10,27 +10,21 @@ local TweenService = game:GetService("TweenService")
 local player       = Players.LocalPlayer
 local playerGui    = player:WaitForChild("PlayerGui")
 
--- Sprawdź czy klucz pasuje do formatu XXXX-XXXX-XXXX-XXXX
 local function isValidKey(key)
     key = key:match("^%s*(.-)%s*$")
     return key:match("^[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]$") ~= nil
 end
 
--- Sprawdź zapisany klucz
 local savedKey = nil
 local ok, result = pcall(function() return readfile("lajcior_key.txt") end)
 if ok and result and result ~= "" then
     savedKey = result:match("^%s*(.-)%s*$")
 end
-
 if savedKey and isValidKey(savedKey) then
-    -- klucz już zapisany, key system się nie pokazuje
     return
 end
 
--- ══════════════════════════════════════════
---  UI
--- ══════════════════════════════════════════
+-- UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "KeySystem"
 ScreenGui.ResetOnSpawn = false
@@ -41,17 +35,18 @@ local blur = Instance.new("BlurEffect")
 blur.Size = 16
 blur.Parent = game:GetService("Lighting")
 
+-- bardzo ciemne tlo
 local Backdrop = Instance.new("Frame")
 Backdrop.Size = UDim2.new(1,0,1,0)
 Backdrop.BackgroundColor3 = Color3.fromRGB(0,0,0)
-Backdrop.BackgroundTransparency = 0.15
+Backdrop.BackgroundTransparency = 0.1
 Backdrop.BorderSizePixel = 0
 Backdrop.ZIndex = 1
 Backdrop.Parent = ScreenGui
 
 local Card = Instance.new("Frame")
-Card.Size = UDim2.new(0,400,0,278)
-Card.Position = UDim2.new(0.5,-200,0.5,-130)
+Card.Size = UDim2.new(0,400,0,295)
+Card.Position = UDim2.new(0.5,-200,0.5,-147)
 Card.BackgroundColor3 = Color3.fromRGB(13,16,32)
 Card.BorderSizePixel = 0
 Card.ZIndex = 2
@@ -125,6 +120,7 @@ Status.TextSize = 12
 Status.Font = Enum.Font.Gotham
 Status.ZIndex = 3
 
+-- niebieski przycisk Confirm
 local SubmitBtn = Instance.new("TextButton",Card)
 SubmitBtn.Size = UDim2.new(1,-48,0,42)
 SubmitBtn.Position = UDim2.new(0,24,0,178)
@@ -137,26 +133,31 @@ SubmitBtn.BorderSizePixel = 0
 SubmitBtn.ZIndex = 3
 Instance.new("UICorner",SubmitBtn).CornerRadius = UDim.new(0,8)
 
+-- zielony przycisk Get Key
 local GetKeyBtn = Instance.new("TextButton",Card)
-GetKeyBtn.Size = UDim2.new(1,-48,0,26)
-GetKeyBtn.Position = UDim2.new(0,24,0,226)
-GetKeyBtn.BackgroundTransparency = 1
-GetKeyBtn.Text = "Don't have a key? Get one here →"
-GetKeyBtn.TextColor3 = Color3.fromRGB(90,102,144)
-GetKeyBtn.TextSize = 12
-GetKeyBtn.Font = Enum.Font.Gotham
+GetKeyBtn.Size = UDim2.new(1,-48,0,40)
+GetKeyBtn.Position = UDim2.new(0,24,0,232)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(0,55,38)
+GetKeyBtn.Text = "🔑  Get Key — Click Here"
+GetKeyBtn.TextColor3 = Color3.fromRGB(0,229,160)
+GetKeyBtn.TextSize = 13
+GetKeyBtn.Font = Enum.Font.GothamBold
 GetKeyBtn.BorderSizePixel = 0
 GetKeyBtn.ZIndex = 3
+Instance.new("UICorner",GetKeyBtn).CornerRadius = UDim.new(0,8)
+local gks = Instance.new("UIStroke",GetKeyBtn)
+gks.Color = Color3.fromRGB(0,150,95)
+gks.Thickness = 1.5
 
--- wejście
-Card.Position = UDim2.new(0.5,-200,0.58,-130)
+-- animacja wejścia
+Card.Position = UDim2.new(0.5,-200,0.58,-147)
 Card.BackgroundTransparency = 1
 TweenService:Create(Card,TweenInfo.new(0.4,Enum.EasingStyle.Quint),{
-    Position = UDim2.new(0.5,-200,0.5,-130),
+    Position = UDim2.new(0.5,-200,0.5,-147),
     BackgroundTransparency = 0
 }):Play()
 
--- focus highlight
+-- focus
 Input.Focused:Connect(function()
     TweenService:Create(is,TweenInfo.new(0.2),{Color=Color3.fromRGB(79,110,247),Thickness=1.5}):Play()
 end)
@@ -170,20 +171,20 @@ SubmitBtn.MouseLeave:Connect(function() TweenService:Create(SubmitBtn,TweenInfo.
 GetKeyBtn.MouseEnter:Connect(function() TweenService:Create(GetKeyBtn,TweenInfo.new(0.15),{BackgroundColor3=Color3.fromRGB(0,80,54)}):Play() end)
 GetKeyBtn.MouseLeave:Connect(function() TweenService:Create(GetKeyBtn,TweenInfo.new(0.15),{BackgroundColor3=Color3.fromRGB(0,55,38)}):Play() end)
 
--- get key
+-- get key click
 GetKeyBtn.MouseButton1Click:Connect(function()
     setclipboard(KEY_LINK)
-    GetKeyBtn.Text = "Link copied! Paste in browser ✓"
-    GetKeyBtn.TextColor3 = Color3.fromRGB(0,229,160)
+    GetKeyBtn.Text = "✓  Link copied! Paste in browser"
+    GetKeyBtn.TextColor3 = Color3.fromRGB(255,255,255)
     task.delay(3,function()
-        GetKeyBtn.Text = "Don't have a key? Get one here →"
-        GetKeyBtn.TextColor3 = Color3.fromRGB(90,102,144)
+        GetKeyBtn.Text = "🔑  Get Key — Click Here"
+        GetKeyBtn.TextColor3 = Color3.fromRGB(0,229,160)
     end)
 end)
 
 local function closeUI()
     TweenService:Create(Card,TweenInfo.new(0.3,Enum.EasingStyle.Quint),{
-        Position=UDim2.new(0.5,-200,0.42,-130),
+        Position=UDim2.new(0.5,-200,0.42,-147),
         BackgroundTransparency=1
     }):Play()
     TweenService:Create(Backdrop,TweenInfo.new(0.3),{BackgroundTransparency=1}):Play()
@@ -194,18 +195,14 @@ local function closeUI()
 end
 
 local function shake()
-    local orig = UDim2.new(0.5,-200,0.5,-130)
-    local offsets = {-8, 8, -6, 6, -3, 3, 0}
+    local offsets = {-8,8,-6,6,-3,3,0}
     for _,ox in ipairs(offsets) do
-        TweenService:Create(Card,TweenInfo.new(0.04),{Position=UDim2.new(0.5,-200+ox,0.5,-130)}):Play()
+        TweenService:Create(Card,TweenInfo.new(0.04),{Position=UDim2.new(0.5,-200+ox,0.5,-147)}):Play()
         task.wait(0.04)
     end
-    Card.Position = orig
+    Card.Position = UDim2.new(0.5,-200,0.5,-147)
 end
 
--- ══════════════════════════════════════════
---  SUBMIT
--- ══════════════════════════════════════════
 SubmitBtn.MouseButton1Click:Connect(function()
     local key = Input.Text:upper():match("^%s*(.-)%s*$")
 
@@ -220,9 +217,7 @@ SubmitBtn.MouseButton1Click:Connect(function()
         Status.TextColor3 = Color3.fromRGB(0,229,160)
         SubmitBtn.Text = "✓ Verified"
         SubmitBtn.BackgroundColor3 = Color3.fromRGB(0,180,122)
-
         pcall(function() writefile("lajcior_key.txt", key) end)
-
         task.delay(1,function()
             closeUI()
         end)
